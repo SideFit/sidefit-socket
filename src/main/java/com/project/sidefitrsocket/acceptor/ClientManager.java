@@ -14,32 +14,33 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ClientManager {
     private final JwtProvider jwtProvider;
-    private final Map<Long, RSocketRequester> map = Collections.synchronizedMap(new HashMap<>());
+    private final Map<Long, RSocketRequester> idToSocket = Collections.synchronizedMap(new HashMap<>());
+    private final Map<RSocketRequester, Long> socketToId = Collections.synchronizedMap(new HashMap<>());
 
     public void add(String token, RSocketRequester rSocketRequester) {
-        log.info("login user: {}", map.size());
-
         String jwt = token.replaceFirst("Bearer ", "");
 
         rSocketRequester.rsocket()
                 .onClose()
                 .doFirst(() -> {
+                    log.info("start");
                     Long userId = jwtProvider.getAuthentication(jwt);
                     if (userId == 0L) throw new RuntimeException();
-                    this.map.put(userId, rSocketRequester);
+
+                    this.idToSocket.put(userId, rSocketRequester);
+                    this.socketToId.put(rSocketRequester, userId);
                 })
                 .doFinally(s -> {
-                    System.out.println("finally");
+                    log.info("finally");
+                    Long userId = socketToId.get(rSocketRequester);
 
-                    Long memberId = map.keySet().stream()
-                            .filter(key -> map.get(key).equals(rSocketRequester))
-                            .collect(Collectors.toList())
-                            .get(0);
-
-                    map.remove(memberId);
+                    socketToId.remove(rSocketRequester);
+                    idToSocket.remove(userId);
                 }).subscribe()
         ;
+    }
 
-        log.info("login user: {}", map.size());
+    public Long getUserIdBySocket(RSocketRequester rSocketRequester) {
+        return this.socketToId.get(rSocketRequester);
     }
 }

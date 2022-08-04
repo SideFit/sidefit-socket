@@ -7,6 +7,6 @@ import java.util.List;
 
 @Getter
 @Builder
-public class CreateChatRoomRequest {
+public class CreateChatroomRequest {
     private final List<Long> userList;
 }
