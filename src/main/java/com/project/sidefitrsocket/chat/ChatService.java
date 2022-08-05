@@ -2,12 +2,14 @@ package com.project.sidefitrsocket.chat;
 
 import com.project.sidefitrsocket.acceptor.ClientManager;
 import com.project.sidefitrsocket.chat.entity.ChatMember;
+import com.project.sidefitrsocket.chat.entity.ChatRead;
 import com.project.sidefitrsocket.chat.entity.Chatroom;
 import com.project.sidefitrsocket.chat.repository.ChatMemberRepository;
 import com.project.sidefitrsocket.chat.repository.ChatReadRepository;
 import com.project.sidefitrsocket.chat.repository.ChatRepository;
 import com.project.sidefitrsocket.chat.repository.ChatroomRepository;
 import com.project.sidefitrsocket.chat.repository.dao.ChatDao;
+import com.project.sidefitrsocket.chat.request.ChatReadRequest;
 import com.project.sidefitrsocket.chat.request.CreateChatroomRequest;
 import com.project.sidefitrsocket.chat.request.MessageRequest;
 import com.project.sidefitrsocket.chat.response.ChatRoomListResponse;
@@ -60,6 +62,13 @@ public class ChatService {
                         )
                     );
                     return chatMemberRepository.saveAll(chatMemberList);
+                }).flatMap(entity -> {
+                    ChatRead chatRead = ChatRead.builder()
+                            .chatId(0L)
+                            .userId(entity.getUserId())
+                            .chatroomId(entity.getChatroomId())
+                            .build();
+                    return chatReadRepository.save(chatRead);
                 }).collectList()
                 .map(list -> chatroomId.get())
                 ;
@@ -80,5 +89,16 @@ public class ChatService {
     public Flux<ChatRoomListResponse> chatroomList(RSocketRequester requester) {
         Long userId = clientManager.getUserIdBySocket(requester);
         return chatDao.findChatRoomList(userId);
+    }
+
+    public Mono<String> chatRead(ChatReadRequest requestBody, RSocketRequester rSocketRequester) {
+        Long userId = clientManager.getUserIdBySocket(rSocketRequester);
+
+        return chatReadRepository.findByUserIdAndChatroomId(userId, requestBody.getChatroomId())
+                .flatMap(chatRead -> {
+                    ChatRead entity = chatRead.toBuilder().chatId(requestBody.getChatId()).build();
+                    return chatReadRepository.save(entity);
+                }).map(entity -> "Success!")
+                ;
     }
 }

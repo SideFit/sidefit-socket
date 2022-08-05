@@ -1,8 +1,10 @@
 package com.project.sidefitrsocket.chat;
 
+import com.project.sidefitrsocket.chat.request.ChatReadRequest;
 import com.project.sidefitrsocket.chat.request.CreateChatroomRequest;
 import com.project.sidefitrsocket.chat.request.MessageRequest;
 import com.project.sidefitrsocket.chat.response.ChatRoomListResponse;
+import io.rsocket.RSocket;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -34,6 +36,11 @@ public class ChatController {
     public Flux<ChatRoomListResponse> chatroomList(Mono<String> requestBody, RSocketRequester requester) {
         requestBody.doOnNext(log::info).subscribe();
         return chatService.chatroomList(requester);
+    }
+
+    @MessageMapping("read")
+    public Mono<String> chatRead(Mono<ChatReadRequest> requestBody, RSocketRequester rSocketRequester) {
+        return requestBody.flatMap(request -> chatService.chatRead(request, rSocketRequester));
     }
 
 

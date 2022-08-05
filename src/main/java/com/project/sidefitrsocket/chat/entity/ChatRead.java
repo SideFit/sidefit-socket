@@ -5,7 +5,7 @@ import lombok.Getter;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @Table("chat_read")
 public class ChatRead {
     private final Long id;
