@@ -21,6 +21,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Service
@@ -33,15 +34,18 @@ public class ChatService {
     private final ChatroomRepository chatroomRepository;
     private final ChatMemberRepository chatMemberRepository;
 
-    public Mono<String> createChatroom(CreateChatroomRequest createChatRoomRequest) {
+    public Mono<Long> createChatroom(CreateChatroomRequest createChatRoomRequest) {
         LocalDateTime now = LocalDateTime.now();
         Chatroom chatroom = Chatroom.builder()
                 .createdDate(now)
                 .lastModifiedDate(now)
                 .build();
 
+        AtomicReference<Long> chatroomId = new AtomicReference<>(0L);
+
         return chatroomRepository.save(chatroom)
                 .flatMapMany(entity -> {
+                    chatroomId.set(entity.getId());
                     List<ChatMember> chatMemberList = new ArrayList<>();
                     createChatRoomRequest.getUserList().forEach(id ->
                         chatMemberList.add(
@@ -55,7 +59,7 @@ public class ChatService {
                     );
                     return chatMemberRepository.saveAll(chatMemberList);
                 }).collectList()
-                .map(list -> "Success!")
+                .map(list -> chatroomId.get())
                 ;
     }
 

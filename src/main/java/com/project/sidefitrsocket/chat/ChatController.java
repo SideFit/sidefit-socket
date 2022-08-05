@@ -20,7 +20,7 @@ public class ChatController {
 
     // 채팅방 생성
     @MessageMapping("room.create")
-    public Mono<String> createChatroom(Mono<CreateChatroomRequest> requestBody) {
+    public Mono<Long> createChatroom(Mono<CreateChatroomRequest> requestBody) {
         return requestBody.flatMap(chatService::createChatroom);
     }
 
