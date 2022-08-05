@@ -7,6 +7,7 @@ import com.project.sidefitrsocket.chat.repository.ChatMemberRepository;
 import com.project.sidefitrsocket.chat.repository.ChatReadRepository;
 import com.project.sidefitrsocket.chat.repository.ChatRepository;
 import com.project.sidefitrsocket.chat.repository.ChatroomRepository;
+import com.project.sidefitrsocket.chat.repository.dao.ChatDao;
 import com.project.sidefitrsocket.chat.request.CreateChatroomRequest;
 import com.project.sidefitrsocket.chat.request.MessageRequest;
 import com.project.sidefitrsocket.chat.response.ChatRoomListResponse;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Service
 @RequiredArgsConstructor
 public class ChatService {
+    private final ChatDao chatDao;
     private final DateUtil dateUtil;
     private final ClientManager clientManager;
     private final ChatRepository chatRepository;
@@ -77,17 +79,6 @@ public class ChatService {
 
     public Flux<ChatRoomListResponse> chatroomList(RSocketRequester requester) {
         Long userId = clientManager.getUserIdBySocket(requester);
-
-        return chatroomRepository.findByUserIdOrderByLastModifiedDateDesc(userId)
-                .flatMap(entity -> chatRepository.findFirstByChatroomIdOrderByIdDesc(entity.getId()))
-                .map(entity ->
-                        ChatRoomListResponse.builder()
-                                .chatroomId(entity.getChatroomId())
-                                .lastMessage(entity.getMessage())
-                                .lastMessageTime(
-                                        dateUtil.localDateTimeToUnixTime(entity.getCreatedDate())
-                                )
-                            .build()
-                );
+        return chatDao.findChatRoomList(userId);
     }
 }
