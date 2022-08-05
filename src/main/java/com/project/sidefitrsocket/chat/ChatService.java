@@ -14,7 +14,6 @@ import com.project.sidefitrsocket.chat.request.ChatReadRequest;
 import com.project.sidefitrsocket.chat.request.CreateChatroomRequest;
 import com.project.sidefitrsocket.chat.request.SendMessageRequest;
 import com.project.sidefitrsocket.chat.response.ChatRoomListResponse;
-import com.project.sidefitrsocket.util.DateUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.rsocket.RSocketRequester;
@@ -33,7 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @RequiredArgsConstructor
 public class ChatService {
     private final ChatDao chatDao;
-    private final DateUtil dateUtil;
     private final ClientManager clientManager;
     private final ChatRepository chatRepository;
     private final ChatReadRepository chatReadRepository;
