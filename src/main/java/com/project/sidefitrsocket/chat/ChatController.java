@@ -2,7 +2,7 @@ package com.project.sidefitrsocket.chat;
 
 import com.project.sidefitrsocket.chat.request.ChatReadRequest;
 import com.project.sidefitrsocket.chat.request.CreateChatroomRequest;
-import com.project.sidefitrsocket.chat.request.MessageRequest;
+import com.project.sidefitrsocket.chat.request.SendMessageRequest;
 import com.project.sidefitrsocket.chat.response.ChatRoomListResponse;
 import io.rsocket.RSocket;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +28,8 @@ public class ChatController {
 
     // 채팅 보내기
     @MessageMapping("send")
-    public Mono<String> sendMessage(Mono<MessageRequest> requestBody) {
-        return requestBody.flatMap(chatService::sendMessage);
+    public Mono<String> sendMessage(Mono<SendMessageRequest> requestBody, RSocketRequester rSocketRequester) {
+        return requestBody.flatMap(request -> chatService.sendMessage(request, rSocketRequester));
     }
 
     @MessageMapping("room.list")

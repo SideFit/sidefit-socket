@@ -1,6 +1,7 @@
 package com.project.sidefitrsocket.chat;
 
 import com.project.sidefitrsocket.acceptor.ClientManager;
+import com.project.sidefitrsocket.chat.entity.Chat;
 import com.project.sidefitrsocket.chat.entity.ChatMember;
 import com.project.sidefitrsocket.chat.entity.ChatRead;
 import com.project.sidefitrsocket.chat.entity.Chatroom;
@@ -11,7 +12,7 @@ import com.project.sidefitrsocket.chat.repository.ChatroomRepository;
 import com.project.sidefitrsocket.chat.repository.dao.ChatDao;
 import com.project.sidefitrsocket.chat.request.ChatReadRequest;
 import com.project.sidefitrsocket.chat.request.CreateChatroomRequest;
-import com.project.sidefitrsocket.chat.request.MessageRequest;
+import com.project.sidefitrsocket.chat.request.SendMessageRequest;
 import com.project.sidefitrsocket.chat.response.ChatRoomListResponse;
 import com.project.sidefitrsocket.util.DateUtil;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
@@ -74,16 +76,37 @@ public class ChatService {
                 ;
     }
 
-    public Mono<String> sendMessage(MessageRequest messageRequest) {
-        log.info("sendMessage!");
+    public Mono<String> sendMessage(SendMessageRequest requestBody, RSocketRequester rSocketRequester) {
+        Long userId = clientManager.getUserIdBySocket(rSocketRequester);
+
+        Chat chat = Chat.builder()
+                .chatroomId(requestBody.getChatroomId())
+                .createdDate(LocalDateTime.now())
+                .lastModifiedDate(LocalDateTime.now())
+                .userId(userId)
+                .build();
 
         // 1. 해당 채팅방에 메시지를 보낸다.
         // 2. 보낸 이가 해당 메시지까지 읽었다는 표시를 한다.
         // 3. 해당 채팅방의 다른 사람들이 소켓에 접속중인 경우, 알림을 보낸다.
         // 4. 성공이라는 결과를 보낸다.
-        messageRequest.getMessage();
-        messageRequest.getChannelId();
-        return null;
+        AtomicLong chatId = new AtomicLong();
+        return chatRepository.save(chat)
+                .flatMap(entity -> {
+                    chatId.set(entity.getId());
+                    return chatReadRepository.findByUserIdAndChatroomId(userId, entity.getChatroomId());
+                })
+                .flatMapMany(entity -> chatMemberRepository.findAllByChatroomIdAndUserIdNot(entity.getChatroomId(), userId))
+                .map(ChatMember::getUserId)
+                .map(clientManager::getSocketByUserId)
+                .flatMap(socketOptional ->
+                    socketOptional.<org.reactivestreams.Publisher<String>>map(socketRequester -> socketRequester.route("chat.receive")
+                        .data(requestBody)
+                        .send()
+                        .thenReturn("Success!"))
+                        .orElseGet(() -> Mono.just("fail!"))
+                )
+                .collectList().thenReturn("Success!");
     }
 
     public Flux<ChatRoomListResponse> chatroomList(RSocketRequester requester) {

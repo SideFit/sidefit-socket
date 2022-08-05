@@ -15,6 +15,7 @@ public class Chat {
     private final Long id;
     private final Long chatroomId;
     private final Long teamId;
+    private final Long userId;
     private final String message;
     private final LocalDateTime createdDate;
     private final LocalDateTime lastModifiedDate;

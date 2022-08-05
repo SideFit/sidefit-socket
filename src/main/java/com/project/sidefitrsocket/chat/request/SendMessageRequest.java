@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class MessageRequest {
-    private final Long channelId;
+public class SendMessageRequest {
+    private final Long chatroomId;
     private final String message;
 }

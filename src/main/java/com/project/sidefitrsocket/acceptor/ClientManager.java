@@ -43,4 +43,12 @@ public class ClientManager {
     public Long getUserIdBySocket(RSocketRequester rSocketRequester) {
         return this.socketToId.get(rSocketRequester);
     }
+
+    public Optional<RSocketRequester> getSocketByUserId(Long userId) {
+        return Optional.ofNullable(idToSocket.get(userId));
+    }
+
+    public List<RSocketRequester> getSocketByUserIdList(List<Long> userIdList) {
+        return userIdList.stream().map(idToSocket::get).collect(Collectors.toList());
+    }
 }
