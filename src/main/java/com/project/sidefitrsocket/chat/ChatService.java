@@ -84,16 +84,8 @@ public class ChatService {
                 .userId(userId)
                 .build();
 
-        // 1. 해당 채팅방에 메시지를 보낸다.
-        // 2. 보낸 이가 해당 메시지까지 읽었다는 표시를 한다.
-        // 3. 해당 채팅방의 다른 사람들이 소켓에 접속중인 경우, 알림을 보낸다.
-        // 4. 성공이라는 결과를 보낸다.
-        AtomicLong chatId = new AtomicLong();
         return chatRepository.save(chat)
-                .flatMap(entity -> {
-                    chatId.set(entity.getId());
-                    return chatReadRepository.findByUserIdAndChatroomId(userId, entity.getChatroomId());
-                })
+                .flatMap(entity ->  chatReadRepository.findByUserIdAndChatroomId(userId, entity.getChatroomId()))
                 .flatMapMany(entity -> chatMemberRepository.findAllByChatroomIdAndUserIdNot(entity.getChatroomId(), userId))
                 .map(ChatMember::getUserId)
                 .map(clientManager::getSocketByUserId)
@@ -117,8 +109,8 @@ public class ChatService {
 
         return chatReadRepository.findByUserIdAndChatroomId(userId, requestBody.getChatroomId())
                 .flatMap(chatRead -> {
-                    ChatRead entity = chatRead.toBuilder().chatId(requestBody.getChatId()).build();
-                    return chatReadRepository.save(entity);
+                    chatRead.setChatId(requestBody.getChatId());
+                    return chatReadRepository.save(chatRead);
                 }).map(entity -> "Success!")
                 ;
     }

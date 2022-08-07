@@ -11,5 +11,9 @@ public class ChatRead {
     private final Long id;
     private final Long userId;
     private final Long chatroomId;
-    private final Long chatId;
+    private Long chatId;
+
+    public void setChatId(Long chatId) {
+        this.chatId = chatId;
+    }
 }
